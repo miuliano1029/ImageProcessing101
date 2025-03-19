@@ -5,7 +5,7 @@
 
 input = getDirectory("Select folder containing raw images");
 output = getDirectory("Select folder to save images in");
-
+print("\\Clear");
 //Parameters for the z-stack
 //You are able to choose what kind of projection you want, the order/number of the channels in the final image, 
 //what type of files you are starting with, and if you want RGB output
@@ -22,15 +22,23 @@ stack = newArray("MAX","MIN","AVG","SUM","SD","MED","NONE");
 	suffix= Dialog.getString();
 	flat = Dialog.getString();
 	ztack = Dialog.getChoice();
-	Dialog.create("what colors\nare the channels");
-		channels = newArray("Cyan","Green","Red","Blue");
+Dialog.create("starting channels & staining");
+		channels =newArray("C1","C2","C3","C4");
+		color = newArray("Cyan","Green","Red","Blue");
+		signalchannel = newArray("405","488","568","647");
 		for(n=0;n<numChan;n++){
-			Dialog.addChoice("color",channels,channels[n]);
+			Dialog.addChoice(channels[n],signalchannel,signalchannel[n]);
+			Dialog.addString("", "antibody/signal",20);
+		
 		}
 	Dialog.show();
+	signalArray=newArray();
 	chanArray = newArray();
 	for(n=0;n<numChan;n++) {
 		chanArray = Array.concat(chanArray,Dialog.getChoice());
+		signal=Dialog.getString();
+		signalArray = Array.concat(signalArray,signal);
+		list=List.set((n+1), signal);
 	}
 //setting up and reordering your channels
 	Dialog.create("Arrange Channels");
@@ -38,24 +46,31 @@ stack = newArray("MAX","MIN","AVG","SUM","SD","MED","NONE");
 		for(n=0;n<numChan;n++) {
 			oldchan = oldchan+" "+(n+1)+"-"+chanArray[n]+"\n";
 		}
-		Dialog.addMessage(oldchan);
+		print(oldchan);
+
+Dialog.addMessage(oldchan);
 		finArray = newArray();
-		colArray = newArray();
-		for(n=0;n<finChan;n++) {
-			Dialog.setInsets(20,0,0);
-			Dialog.addNumber("Change to channel "+(n+1),(n+1),0,1,"");
-			Dialog.setInsets(0,0,0);
-			Dialog.addRadioButtonGroup("New channel color",chanArray,1,numChan,chanArray[n]);
-		}
+		newchan = "New Channel Order\n";
+		Dialog.addMessage(newchan);
+			for(n=0;n<finChan;n++) {
+						Dialog.setInsets(30, 0,0);
+			Dialog.addNumber("Channel "+(n+1),(n+1),0,1,"");
+}
 	Dialog.show();
 	c="";
-	for(n=0;n<finChan;n++) {
-		finArray = Array.concat(finArray,Dialog.getNumber());
-		colArray = Array.concat(colArray,Dialog.getRadioButton());
+for(n=0;n<finChan;n++) {
+		channum=Dialog.getNumber();
+		finArray = Array.concat(finArray,channum);
 		c=c+d2s(finArray[n],0);
+		new=List.get(channum);
+		newchan = newchan+" "+(n+1)+" = "+new+"\n";
+
 	}
+		print(newchan);
 
 processFolder(input);
+selectWindow("Log");
+saveAs("Text", output+"Channel_Summary.csv");
 
 // function to scan folders/subfolders/files to find files with correct suffix
 function processFolder(input) {
@@ -110,9 +125,9 @@ function processFile(input, output, file) {
 		selectWindow("close_me");
 		close();
 	}
-	if(ztack == "NONE") {
+	if(ztack == "") {
 		selectWindow("close_me");
-		rename("stack_close_me");
+		rename(ztack+"_close_me");
 	}
 	projection = ztack+"_close_me";
 	selectImage(projection);
@@ -120,7 +135,6 @@ function processFile(input, output, file) {
 	for(s=0;s<nochannels;s++) {
 		setSlice(s+1);
 		resetMinAndMax();
-		run(colArray[s]);
 	}
 	selectImage(projection);
 	rename(title);
